@@ -3,7 +3,7 @@
  * Depends: CONFIG, RESORTS, SEASON (config + data), api.js, decision.js.
  */
 
-/* global CONFIG, RESORTS, SEASON, geocodeCity, findResortsInRange, fetchResortWeather, isInSeason, decide, outcomeRank, OUTCOMES */
+/* global CONFIG, RESORTS, SEASON, geocodeCity, findResortsInRange, getResortWeatherBatch, isInSeason, decide, outcomeRank, OUTCOMES */
 
 (function () {
   'use strict';
@@ -177,33 +177,30 @@
   }
 
   /**
-   * URL for resort on snow-forecast.com (forecast, snow report, etc.).
-   * Uses snowForecastSlug from resort data for direct link to www.snow-forecast.com/resorts/{slug}.
-   * @param {Object} row - Row data (snowForecastSlug, name)
+   * URL for ski forecast for a resort. Bergfex when we have bergfexSlug; otherwise Google search (site:bergfex.com).
+   * @param {Object} row - Row data (name, bergfexSlug for links)
    * @returns {string}
    */
-  function getSnowForecastUrl(row) {
-    const slug = (row.snowForecastSlug || '').trim();
-    if (slug) return 'https://www.snow-forecast.com/resorts/' + encodeURIComponent(slug);
+  function getSkiForecastUrl(row) {
     const name = (row.name || '').trim();
-    if (!name) return 'https://www.snow-forecast.com/';
-    return 'https://www.snow-forecast.com/resorts/' + encodeURIComponent(name.replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, ''));
+    const enc = encodeURIComponent;
+    if (row.bergfexSlug) {
+      return 'https://www.bergfex.com/' + encodeURIComponent(row.bergfexSlug) + '/wetter/prognose/';
+    }
+    return 'https://www.google.com/search?q=' + enc('site:bergfex.com ' + name);
   }
 
-  /**
-   * Get URL for a cell (source or more info). Forecast/weather links go to snow-forecast.com.
-   */
   function getCellLink(key, row) {
     const lat = row.lat;
     const lon = row.lon;
     const name = (row.name || '').trim();
     const enc = encodeURIComponent;
-    var snowForecastUrl = getSnowForecastUrl(row);
+    var skiForecastUrl = getSkiForecastUrl(row);
     switch (key) {
       case 'outcome':
-        return snowForecastUrl;
+        return skiForecastUrl;
       case 'name':
-        return snowForecastUrl;
+        return skiForecastUrl;
       case 'distanceKm':
         if (lastCity && lat != null && lon != null) {
           return 'https://www.google.com/maps/dir/?api=1&origin=' + enc(lastCity) + '&destination=' + lat + ',' + lon;
@@ -215,7 +212,7 @@
       case 'snowTopCm':
       case 'snowBottomCm':
       case 'freshSnowCm':
-        return snowForecastUrl;
+        return skiForecastUrl;
       default:
         return '#';
     }
@@ -313,8 +310,7 @@
     try {
       updateTitle(date);
       const cityCoords = await geocodeCity(city);
-      const resorts = findResortsInRange(cityCoords, criteria.maxDistanceKm);
-      const liftsOpen = isInSeason(date);
+      const resorts = await findResortsInRange(cityCoords, criteria.maxDistanceKm);
 
       if (resorts.length === 0) {
         showResult(
@@ -326,10 +322,11 @@
         return;
       }
 
+      const weatherList = await getResortWeatherBatch(resorts, date);
       const rows = [];
       for (let i = 0; i < resorts.length; i++) {
         const resort = resorts[i];
-        const weather = await fetchResortWeather(resort, date);
+        const weather = weatherList[i] || {};
         const ctx = {
           tempMin: weather.tempMin,
           tempMax: weather.tempMax,
@@ -337,7 +334,7 @@
           snowTopCm: weather.snowTopCm,
           snowBottomCm: weather.snowBottomCm,
           freshSnowCm: weather.freshSnowCm,
-          liftsOpen,
+          liftsOpen: weather.liftsOpen != null ? weather.liftsOpen : isInSeason(date),
           resortInRange: true,
           resortName: resort.name,
           distanceKm: resort.distanceKm,
@@ -347,7 +344,7 @@
           name: resort.name,
           lat: resort.lat,
           lon: resort.lon,
-          snowForecastSlug: resort.snowForecastSlug,
+          bergfexSlug: resort.bergfexSlug,
           distanceKm: resort.distanceKm,
           outcome,
           reason,

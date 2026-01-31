@@ -270,6 +270,16 @@ async function fetchResortWeather(resort, date) {
 }
 
 /**
+ * Fetch weather for multiple resorts in parallel.
+ * @param {Array<{ lat: number, lon: number, elevationTop: number, elevationBottom: number, snowForecastRecordId?: number }>} resorts
+ * @param {string} date - YYYY-MM-DD
+ * @returns {Promise<Array<{ tempMin: number, tempMax: number, windMax: number, snowTopCm: number, snowBottomCm: number, freshSnowCm: number }>>}
+ */
+async function getResortWeatherBatch(resorts, date) {
+  return Promise.all(resorts.map(function (resort) { return fetchResortWeather(resort, date); }));
+}
+
+/**
  * Check if a date falls within the typical ski season.
  * @param {string} date - YYYY-MM-DD
  * @returns {boolean}

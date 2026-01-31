@@ -11,9 +11,9 @@ A **static** website that answers whether a given day is good for skiing, based 
 
 It also requires that **lifts/slopes are open**: the app uses a typical Alpine season (1 Dec – 15 Apr). Outside that window, the answer is always **Nein.**
 
-All logic runs in the browser. Data and links use [snow-forecast.com](https://www.snow-forecast.com) where possible:
+All logic runs in the browser. Links go to [Bergfex](https://www.bergfex.com) for ski weather; forecast data from Open-Meteo (or optionally Snow-Forecast API):
 
-- **Links** – Resort names and weather values link to **www.snow-forecast.com** (resort page, 6-day forecast, snow report). Each resort has a `snowForecastSlug` in `js/data/resorts.js` for direct URLs.
+- **Links** – Resort names and weather values link to **www.bergfex.com** (ski weather forecast). Each resort has a `bergfexSlug` in `js/data/resorts.js` for direct URLs (e.g. `https://www.bergfex.com/[slug]/wetter/prognose/`).
 - **Forecast data** – Optional: set `SNOW_FORECAST_CLIENT_ID` in `js/config.js` and add `snowForecastRecordId` per resort (see [docs.snow-forecast.com](https://docs.snow-forecast.com)) to fetch temperatures, wind, and snow from the Snow-Forecast API. Without these, the app uses **Open-Meteo** for forecast data.
 - **OpenStreetMap Nominatim** – geocoding city → coordinates (User-Agent required)
 
@@ -127,7 +127,7 @@ Resort list and season are in `js/data/resorts.js` and can be adjusted there.
 ├── js/
 │   ├── config.js       # Defaults and API URLs
 │   ├── data/
-│   │   └── resorts.js  # Resorts: coords, elevations, snowForecastSlug (links), optional snowForecastRecordId (API)
+│   │   └── resorts.js  # Resorts: coords, elevations, bergfexSlug (links), optional snowForecastRecordId (API)
 │   ├── api.js          # Geocoding (Nominatim), weather (Snow-Forecast API or Open-Meteo), findResortsInRange
 │   ├── decision.js     # Criteria + weather → one of five outcomes
 │   └── main.js         # Form, defaults, title update, result display
@@ -138,7 +138,8 @@ Resort list and season are in `js/data/resorts.js` and can be adjusted there.
 
 ## License and APIs
 
-- **Snow-Forecast.com**: All resort and weather links go to [www.snow-forecast.com](https://www.snow-forecast.com). Optional: to use their API for forecast data (temperatures, wind, snow), see [docs.snow-forecast.com](https://docs.snow-forecast.com); set `SNOW_FORECAST_CLIENT_ID` in `js/config.js` and add `snowForecastRecordId` per resort in `js/data/resorts.js`. Without these, the app uses Open-Meteo for data.
+- **Bergfex**: Resort and weather links go to [www.bergfex.com](https://www.bergfex.com) (ski weather forecast). Each resort has a `bergfexSlug` in `js/data/resorts.js`.
+- **Snow-Forecast.com**: Optional: to use their API for forecast data (temperatures, wind, snow), see [docs.snow-forecast.com](https://docs.snow-forecast.com); set `SNOW_FORECAST_CLIENT_ID` in `js/config.js` and add `snowForecastRecordId` per resort in `js/data/resorts.js`. Without these, the app uses Open-Meteo for data.
 - **Open-Meteo**: used for forecast data when Snow-Forecast API is not configured; non-commercial use, no API key; see [open-meteo.com](https://open-meteo.com).
 - **Nominatim (OSM)**: usage policy requires a valid **User-Agent**; the app sets one in `js/config.js` (`NOMINATIM_USER_AGENT`). Do not abuse the service.
 

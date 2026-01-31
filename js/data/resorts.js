@@ -4,11 +4,11 @@
  * Distances are approximate from Munich; for other cities we compute distance from coordinates.
  *
  * Data sources: public maps and resort info. Elevations in m, coordinates WGS84.
- * snowForecastSlug: URL slug for www.snow-forecast.com/resorts/{slug} (forecast, snow report, etc.).
+ * bergfexSlug: URL slug for www.bergfex.com/[slug]/wetter/prognose/ (ski weather forecast).
  * snowForecastRecordId: optional; location ID for Snow-Forecast API (see docs.snow-forecast.com). When set with SNOW_FORECAST_CLIENT_ID, forecast data is fetched from snow-forecast.com.
  */
 
-/** @type {Array<{ id: string, name: string, lat: number, lon: number, elevationTop: number, elevationBottom: number, distanceFromMunichKm: number, snowForecastSlug: string, snowForecastRecordId?: number }>} */
+/** @type {Array<{ id: string, name: string, lat: number, lon: number, elevationTop: number, elevationBottom: number, distanceFromMunichKm: number, bergfexSlug: string, snowForecastRecordId?: number }>} */
 var RESORTS = [
   {
     id: 'spitzingsee',
@@ -18,7 +18,7 @@ var RESORTS = [
     elevationTop: 1600,
     elevationBottom: 1100,
     distanceFromMunichKm: 58,
-    snowForecastSlug: 'Spitzingsee',
+    bergfexSlug: 'spitzingsee-tegernsee',
   },
   {
     id: 'sudelfeld',
@@ -28,7 +28,7 @@ var RESORTS = [
     elevationTop: 1610,
     elevationBottom: 780,
     distanceFromMunichKm: 61,
-    snowForecastSlug: 'Bayrischzell',
+    bergfexSlug: 'sudelfeld-bayrischzell',
   },
   {
     id: 'lenggries',
@@ -38,7 +38,7 @@ var RESORTS = [
     elevationTop: 1555,
     elevationBottom: 700,
     distanceFromMunichKm: 50,
-    snowForecastSlug: 'Lenggries',
+    bergfexSlug: 'brauneck-lenggries',
   },
   {
     id: 'garmisch',
@@ -48,7 +48,7 @@ var RESORTS = [
     elevationTop: 2962,
     elevationBottom: 700,
     distanceFromMunichKm: 90,
-    snowForecastSlug: 'Garmisch-Partenkirchen',
+    bergfexSlug: 'zugspitze',
   },
   {
     id: 'oberammergau',
@@ -58,7 +58,7 @@ var RESORTS = [
     elevationTop: 2050,
     elevationBottom: 830,
     distanceFromMunichKm: 72,
-    snowForecastSlug: 'Oberammergau',
+    bergfexSlug: 'laber-oberammergau',
   },
   {
     id: 'mittenwald',
@@ -68,7 +68,7 @@ var RESORTS = [
     elevationTop: 2244,
     elevationBottom: 920,
     distanceFromMunichKm: 81,
-    snowForecastSlug: 'Mittenwald',
+    bergfexSlug: 'mittenwald-karwendel',
   },
   {
     id: 'wendelstein',
@@ -78,7 +78,7 @@ var RESORTS = [
     elevationTop: 1838,
     elevationBottom: 780,
     distanceFromMunichKm: 65,
-    snowForecastSlug: 'Bayrischzell-Brannenburg-Wendelstein',
+    bergfexSlug: 'wendelstein',
   },
   {
     id: 'tegernsee',
@@ -88,7 +88,7 @@ var RESORTS = [
     elevationTop: 1722,
     elevationBottom: 700,
     distanceFromMunichKm: 55,
-    snowForecastSlug: 'Tegernsee',
+    bergfexSlug: 'wallberg-tegernseertal',
   },
   {
     id: 'kitzbuehel',
@@ -98,7 +98,7 @@ var RESORTS = [
     elevationTop: 2000,
     elevationBottom: 800,
     distanceFromMunichKm: 120,
-    snowForecastSlug: 'Kitzbuhel',
+    bergfexSlug: 'kitzbuehel',
   },
   {
     id: 'zell-am-see',
@@ -108,7 +108,7 @@ var RESORTS = [
     elevationTop: 3029,
     elevationBottom: 750,
     distanceFromMunichKm: 150,
-    snowForecastSlug: 'Zell-am-See',
+    bergfexSlug: 'kitzsteinhorn-kaprun',
   },
 ];
 
