@@ -24,6 +24,9 @@
   let resortRows = [];
   /** Current sort: { key: string, dir: 1 | -1 } */
   let sortState = { key: 'outcome', dir: -1 };
+  /** Criteria and city from last run (for cell coloring and links). */
+  let lastCriteria = null;
+  let lastCity = '';
 
   /** Get tomorrow in local date as YYYY-MM-DD. */
   function getTomorrowISO() {
@@ -142,6 +145,76 @@
     return 'Nein.';
   }
 
+  /**
+   * Get cell status for coloring: 'good' (meets criterion), 'bad' (disqualifying), 'neutral'.
+   * @param {string} key - Column key
+   * @param {Object} row - Row data
+   * @returns {string}
+   */
+  function getCellStatus(key, row) {
+    if (!lastCriteria) return 'neutral';
+    const c = lastCriteria;
+    switch (key) {
+      case 'tempMin':
+        return row.tempMin < c.minTemp ? 'bad' : 'good';
+      case 'tempMax':
+        return row.tempMax > c.maxTemp ? 'bad' : 'good';
+      case 'windMax':
+        return row.windMax > c.maxWindKmh ? 'bad' : 'good';
+      case 'snowTopCm':
+        return row.snowTopCm < c.minSnowTopCm ? 'bad' : 'good';
+      case 'snowBottomCm':
+        return row.snowBottomCm < c.minSnowBottomCm ? 'bad' : 'good';
+      case 'freshSnowCm':
+        if (!c.requireFreshSnow) return 'neutral';
+        return row.freshSnowCm < c.minFreshSnowCm ? 'bad' : 'good';
+      case 'outcome':
+      case 'name':
+      case 'distanceKm':
+      default:
+        return 'neutral';
+    }
+  }
+
+  /**
+   * Get URL for a cell (source or more info). Opens in new tab.
+   * @param {string} key - Column key
+   * @param {Object} row - Row data (must include lat, lon for weather/resort links)
+   * @returns {string}
+   */
+  function getCellLink(key, row) {
+    const lat = row.lat;
+    const lon = row.lon;
+    const name = (row.name || '').trim();
+    const enc = encodeURIComponent;
+    switch (key) {
+      case 'outcome':
+        if (lat != null && lon != null) {
+          return 'https://open-meteo.com/en/weather/forecast?latitude=' + lat + '&longitude=' + lon;
+        }
+        return 'https://open-meteo.com/';
+      case 'name':
+        return 'https://www.google.com/search?q=' + enc(name + ' Skigebiet');
+      case 'distanceKm':
+        if (lastCity && lat != null && lon != null) {
+          return 'https://www.google.com/maps/dir/?api=1&origin=' + enc(lastCity) + '&destination=' + lat + ',' + lon;
+        }
+        return 'https://www.google.com/maps/';
+      case 'tempMin':
+      case 'tempMax':
+      case 'windMax':
+      case 'snowTopCm':
+      case 'snowBottomCm':
+      case 'freshSnowCm':
+        if (lat != null && lon != null) {
+          return 'https://open-meteo.com/en/weather/forecast?latitude=' + lat + '&longitude=' + lon;
+        }
+        return 'https://open-meteo.com/';
+      default:
+        return '#';
+    }
+  }
+
   /** Sort resort rows by current sortState and render table body. */
   function sortAndRenderResortTable() {
     const key = sortState.key;
@@ -167,19 +240,35 @@
   function renderResortTableBody(rows) {
     if (!resortTableBody) return;
     resortTableBody.innerHTML = '';
+    const columns = [
+      { key: 'outcome', format: function (r) { return r.outcome || ''; }, decimals: null },
+      { key: 'name', format: function (r) { return r.name || ''; }, decimals: null },
+      { key: 'distanceKm', format: function (r) { return formatNum(r.distanceKm, 0); }, decimals: 0 },
+      { key: 'tempMin', format: function (r) { return formatNum(r.tempMin, 0); }, decimals: 0 },
+      { key: 'tempMax', format: function (r) { return formatNum(r.tempMax, 0); }, decimals: 0 },
+      { key: 'windMax', format: function (r) { return formatNum(r.windMax, 0); }, decimals: 0 },
+      { key: 'snowTopCm', format: function (r) { return formatNum(r.snowTopCm, 0); }, decimals: 0 },
+      { key: 'snowBottomCm', format: function (r) { return formatNum(r.snowBottomCm, 0); }, decimals: 0 },
+      { key: 'freshSnowCm', format: function (r) { return formatNum(r.freshSnowCm, 1); }, decimals: 1 },
+    ];
     rows.forEach(function (row) {
       const tr = document.createElement('tr');
       tr.className = 'resort-table__row resort-table__row--' + (row.outcome || 'nein').replace(/[^a-z0-9]/gi, '').toLowerCase();
-      tr.innerHTML =
-        '<td class="resort-table__cell resort-table__cell--outcome">' + escapeHtml(row.outcome || '') + '</td>' +
-        '<td class="resort-table__cell">' + escapeHtml(row.name || '') + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.distanceKm, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.tempMin, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.tempMax, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.windMax, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.snowTopCm, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.snowBottomCm, 0) + '</td>' +
-        '<td class="resort-table__cell resort-table__cell--num">' + formatNum(row.freshSnowCm, 1) + '</td>';
+      let html = '';
+      columns.forEach(function (col) {
+        const status = getCellStatus(col.key, row);
+        const text = col.key === 'outcome' || col.key === 'name' ? escapeHtml(row[col.key] || '') : col.format(row);
+        const href = getCellLink(col.key, row);
+        const cellClass = 'resort-table__cell resort-table__cell--' + status +
+          (col.key === 'outcome' ? ' resort-table__cell--outcome' : '') +
+          (col.decimals != null ? ' resort-table__cell--num' : '');
+        const linkTitle = status === 'bad' ? 'Kriterium nicht erfüllt – Quelle prüfen' : 'Quelle / Mehr erfahren';
+        html += '<td class="' + cellClass + '" title="' + (status === 'bad' ? 'Kriterium nicht erfüllt' : '') + '">';
+        html += '<a class="resort-table__link" href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer" title="' + escapeHtml(linkTitle) + '">';
+        html += text;
+        html += '</a></td>';
+      });
+      tr.innerHTML = html;
       resortTableBody.appendChild(tr);
     });
   }
@@ -250,6 +339,8 @@
         const { outcome, reason } = decide(criteria, ctx);
         rows.push({
           name: resort.name,
+          lat: resort.lat,
+          lon: resort.lon,
           distanceKm: resort.distanceKm,
           outcome,
           reason,
@@ -262,6 +353,8 @@
         });
       }
 
+      lastCriteria = criteria;
+      lastCity = city;
       resortRows = rows;
       const overallOutcome = bestOutcome(rows.map(function (r) { return r.outcome; }));
       const positiveCount = rows.filter(function (r) { return r.outcome !== 'Nein.'; }).length;

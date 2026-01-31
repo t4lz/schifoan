@@ -330,6 +330,38 @@ body {
 .resort-table__row--nichtswirklich .resort-table__cell--outcome { color: var(--warning); }
 .resort-table__row--nein .resort-table__cell--outcome { color: var(--danger); }
 
+/* Variable value quality: good (meets criterion), bad (disqualifying), neutral */
+.resort-table__cell--good {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--success);
+}
+.resort-table__cell--bad {
+  background: rgba(248, 81, 73, 0.18);
+  color: #ff7b72;
+  font-weight: 600;
+}
+.resort-table__cell--bad::after {
+  content: ' ✗';
+  opacity: 0.9;
+}
+.resort-table__cell--neutral {
+  /* no tint */
+}
+
+/* Links in cells: full cell clickable, subtle underline on hover */
+.resort-table__link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.resort-table__link:hover {
+  text-decoration: underline;
+}
+.resort-table__link:focus {
+  outline: 1px dotted var(--accent);
+  outline-offset: 2px;
+}
+
 /* --------------------------------------------------------------------------
    Footer
    -------------------------------------------------------------------------- */
