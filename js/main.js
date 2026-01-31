@@ -178,8 +178,9 @@
 
   /**
    * Get URL for a cell (source or more info). Opens in new tab.
+   * Weather/ski links use Bergfex ski forecast (resort page) when bergfexSlug is set.
    * @param {string} key - Column key
-   * @param {Object} row - Row data (must include lat, lon for weather/resort links)
+   * @param {Object} row - Row data (name, lat, lon, bergfexSlug for links)
    * @returns {string}
    */
   function getCellLink(key, row) {
@@ -187,12 +188,12 @@
     const lon = row.lon;
     const name = (row.name || '').trim();
     const enc = encodeURIComponent;
+    var skiForecastUrl = (row.bergfexSlug)
+      ? 'https://www.bergfex.com/' + encodeURIComponent(row.bergfexSlug) + '/wetter/prognose/'
+      : 'https://www.google.com/search?q=' + enc(name + ' Skigebiet Wetter Prognose');
     switch (key) {
       case 'outcome':
-        if (lat != null && lon != null) {
-          return 'https://open-meteo.com/en/weather/forecast?latitude=' + lat + '&longitude=' + lon;
-        }
-        return 'https://open-meteo.com/';
+        return skiForecastUrl;
       case 'name':
         return 'https://www.google.com/search?q=' + enc(name + ' Skigebiet');
       case 'distanceKm':
@@ -206,10 +207,7 @@
       case 'snowTopCm':
       case 'snowBottomCm':
       case 'freshSnowCm':
-        if (lat != null && lon != null) {
-          return 'https://open-meteo.com/en/weather/forecast?latitude=' + lat + '&longitude=' + lon;
-        }
-        return 'https://open-meteo.com/';
+        return skiForecastUrl;
       default:
         return '#';
     }
@@ -341,6 +339,7 @@
           name: resort.name,
           lat: resort.lat,
           lon: resort.lon,
+          bergfexSlug: resort.bergfexSlug,
           distanceKm: resort.distanceKm,
           outcome,
           reason,
