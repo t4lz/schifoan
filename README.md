@@ -4,19 +4,20 @@ A **static** website that answers whether a given day is good for skiing, based 
 
 - **Date** (default: tomorrow)
 - **City** (default: Munich) and **max distance** to a resort (km)
-- **Temperature** range on the mountain (min/max °C)
+- **Temperature** range at mid-mountain (min/max °C during ski hours 08:00–16:00)
 - **Max wind** (km/h)
 - **Min snow** at top and bottom (cm)
 - **Optional** minimum fresh snow (only when “Min. Neuschnee” is enabled)
 
 It also requires that **lifts/slopes are open**: the app uses a typical Alpine season (1 Dec – 15 Apr). Outside that window, the answer is always **Nein.**
 
-All logic runs in the browser. Data comes from public APIs:
+All logic runs in the browser. Data and links use [snow-forecast.com](https://www.snow-forecast.com) where possible:
 
-- **Open-Meteo** – weather and snow (no API key, CORS allowed for non-commercial use)
+- **Links** – Resort names and weather values link to **www.snow-forecast.com** (resort page, 6-day forecast, snow report). Each resort has a `snowForecastSlug` in `js/data/resorts.js` for direct URLs.
+- **Forecast data** – Optional: set `SNOW_FORECAST_CLIENT_ID` in `js/config.js` and add `snowForecastRecordId` per resort (see [docs.snow-forecast.com](https://docs.snow-forecast.com)) to fetch temperatures, wind, and snow from the Snow-Forecast API. Without these, the app uses **Open-Meteo** for forecast data.
 - **OpenStreetMap Nominatim** – geocoding city → coordinates (User-Agent required)
 
-No backend, no API keys for the default setup.
+No backend. No API keys required for the default setup (Open-Meteo + Nominatim).
 
 ---
 
@@ -96,8 +97,8 @@ No build step or environment variables are required. The only requirement is tha
 | Date              | Tomorrow | Day to check                       |
 | City              | Munich   | Starting point for distance filter |
 | Max distance      | 150 km  | Resorts farther are ignored        |
-| Min temp (mountain)| −15 °C | Colder is still OK                 |
-| Max temp (mountain)| 5 °C   | Warmer = slushy                    |
+| Min temp (mid-mountain)| −15 °C | Colder is still OK (min during 08:00–16:00) |
+| Max temp (mid-mountain)| 5 °C   | Warmer = slushy (max during 08:00–16:00)    |
 | Max wind          | 50 km/h | Stronger can close lifts           |
 | Min snow (top)    | 30 cm   | Minimum at summit                  |
 | Min snow (bottom) | 10 cm   | Minimum at base                    |
@@ -126,8 +127,8 @@ Resort list and season are in `js/data/resorts.js` and can be adjusted there.
 ├── js/
 │   ├── config.js       # Defaults and API URLs
 │   ├── data/
-│   │   └── resorts.js  # Static list of resorts (coords, elevations, distance)
-│   ├── api.js          # Geocoding (Nominatim), weather (Open-Meteo), nearest resort
+│   │   └── resorts.js  # Resorts: coords, elevations, snowForecastSlug (links), optional snowForecastRecordId (API)
+│   ├── api.js          # Geocoding (Nominatim), weather (Snow-Forecast API or Open-Meteo), findResortsInRange
 │   ├── decision.js     # Criteria + weather → one of five outcomes
 │   └── main.js         # Form, defaults, title update, result display
 └── README.md
@@ -137,7 +138,8 @@ Resort list and season are in `js/data/resorts.js` and can be adjusted there.
 
 ## License and APIs
 
-- **Open-Meteo**: non-commercial use, no API key; see [open-meteo.com](https://open-meteo.com).
+- **Snow-Forecast.com**: All resort and weather links go to [www.snow-forecast.com](https://www.snow-forecast.com). Optional: to use their API for forecast data (temperatures, wind, snow), see [docs.snow-forecast.com](https://docs.snow-forecast.com); set `SNOW_FORECAST_CLIENT_ID` in `js/config.js` and add `snowForecastRecordId` per resort in `js/data/resorts.js`. Without these, the app uses Open-Meteo for data.
+- **Open-Meteo**: used for forecast data when Snow-Forecast API is not configured; non-commercial use, no API key; see [open-meteo.com](https://open-meteo.com).
 - **Nominatim (OSM)**: usage policy requires a valid **User-Agent**; the app sets one in `js/config.js` (`NOMINATIM_USER_AGENT`). Do not abuse the service.
 
 Change defaults and resort list in `js/config.js` and `js/data/resorts.js` as needed for your use case.

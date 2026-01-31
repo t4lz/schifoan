@@ -177,25 +177,33 @@
   }
 
   /**
-   * Get URL for a cell (source or more info). Opens in new tab.
-   * Weather/ski links use Bergfex ski forecast (resort page) when bergfexSlug is set.
-   * @param {string} key - Column key
-   * @param {Object} row - Row data (name, lat, lon, bergfexSlug for links)
+   * URL for resort on snow-forecast.com (forecast, snow report, etc.).
+   * Uses snowForecastSlug from resort data for direct link to www.snow-forecast.com/resorts/{slug}.
+   * @param {Object} row - Row data (snowForecastSlug, name)
    * @returns {string}
+   */
+  function getSnowForecastUrl(row) {
+    const slug = (row.snowForecastSlug || '').trim();
+    if (slug) return 'https://www.snow-forecast.com/resorts/' + encodeURIComponent(slug);
+    const name = (row.name || '').trim();
+    if (!name) return 'https://www.snow-forecast.com/';
+    return 'https://www.snow-forecast.com/resorts/' + encodeURIComponent(name.replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, ''));
+  }
+
+  /**
+   * Get URL for a cell (source or more info). Forecast/weather links go to snow-forecast.com.
    */
   function getCellLink(key, row) {
     const lat = row.lat;
     const lon = row.lon;
     const name = (row.name || '').trim();
     const enc = encodeURIComponent;
-    var skiForecastUrl = (row.bergfexSlug)
-      ? 'https://www.bergfex.com/' + encodeURIComponent(row.bergfexSlug) + '/wetter/prognose/'
-      : 'https://www.google.com/search?q=' + enc(name + ' Skigebiet Wetter Prognose');
+    var snowForecastUrl = getSnowForecastUrl(row);
     switch (key) {
       case 'outcome':
-        return skiForecastUrl;
+        return snowForecastUrl;
       case 'name':
-        return 'https://www.google.com/search?q=' + enc(name + ' Skigebiet');
+        return snowForecastUrl;
       case 'distanceKm':
         if (lastCity && lat != null && lon != null) {
           return 'https://www.google.com/maps/dir/?api=1&origin=' + enc(lastCity) + '&destination=' + lat + ',' + lon;
@@ -207,7 +215,7 @@
       case 'snowTopCm':
       case 'snowBottomCm':
       case 'freshSnowCm':
-        return skiForecastUrl;
+        return snowForecastUrl;
       default:
         return '#';
     }
@@ -339,7 +347,7 @@
           name: resort.name,
           lat: resort.lat,
           lon: resort.lon,
-          bergfexSlug: resort.bergfexSlug,
+          snowForecastSlug: resort.snowForecastSlug,
           distanceKm: resort.distanceKm,
           outcome,
           reason,

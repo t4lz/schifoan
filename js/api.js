@@ -1,9 +1,18 @@
 /**
- * API layer: geocoding (Nominatim) and weather (Open-Meteo).
- * All calls are from the client; no API keys required for default usage.
+ * API layer: geocoding (Nominatim), weather (Open-Meteo or Snow-Forecast API).
+ * When SNOW_FORECAST_CLIENT_ID and resort.snowForecastRecordId are set, forecast values come from the
+ * Snow-Forecast API (documentation: https://docs.snow-forecast.com).
  */
 
 /* global CONFIG, RESORTS, SEASON */
+
+function getSnowForecastClientId() {
+  return (typeof window !== 'undefined' && window.SNOW_FORECAST_CLIENT_ID) || CONFIG.SNOW_FORECAST_CLIENT_ID || '';
+}
+
+function hasSnowForecastFeed() {
+  return getSnowForecastClientId().length > 0;
+}
 
 /**
  * Geocode a city name to WGS84 coordinates.
@@ -64,9 +73,14 @@ function findResortsInRange(cityCoords, maxDistanceKm) {
   return list;
 }
 
+/** Ski hours (local time): 08:00–16:00. Min/max temp is computed over these hours only. */
+var SKI_HOURS_START = 8;
+var SKI_HOURS_END = 16;
+
 /**
  * Fetch weather for a single point (Open-Meteo).
  * Uses elevation for downscaling so we get mountain-appropriate values.
+ * Min/max temperature are for ski hours (08:00–16:00) on the given date, not the full day.
  * @param {number} lat
  * @param {number} lon
  * @param {number} elevation - meters
@@ -81,8 +95,8 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
     timezone: 'Europe/Berlin',
     start_date: date,
     end_date: date,
-    daily: 'temperature_2m_min,temperature_2m_max,wind_speed_10m_max,wind_gusts_10m_max,snowfall_sum',
-    hourly: 'snow_depth',
+    daily: 'wind_speed_10m_max,wind_gusts_10m_max,snowfall_sum',
+    hourly: 'temperature_2m,snow_depth',
     temperature_unit: 'celsius',
     wind_speed_unit: 'kmh',
   });
@@ -94,52 +108,160 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
   const daily = data.daily;
   const dayIdx = (daily && daily.time && daily.time.indexOf(date)) >= 0 ? daily.time.indexOf(date) : 0;
 
-  const tempMin = Array.isArray(daily.temperature_2m_min) ? daily.temperature_2m_min[dayIdx] : null;
-  const tempMax = Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max[dayIdx] : null;
   const windMax = Array.isArray(daily.wind_speed_10m_max) ? daily.wind_speed_10m_max[dayIdx] : null;
   const windGust = Array.isArray(daily.wind_gusts_10m_max) ? daily.wind_gusts_10m_max[dayIdx] : null;
   const snowfallSum = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[dayIdx] : 0;
 
+  // Temp min/max during ski hours (08:00–16:00) only
+  var tempMinSki = NaN;
+  var tempMaxSki = NaN;
+  if (data.hourly && data.hourly.time && Array.isArray(data.hourly.temperature_2m)) {
+    const times = data.hourly.time;
+    const temps = data.hourly.temperature_2m;
+    for (var i = 0; i < times.length; i++) {
+      var t = String(times[i]);
+      if (!t.startsWith(date)) continue;
+      var hourPart = t.indexOf('T') >= 0 ? t.split('T')[1] : '';
+      var hour = parseInt(hourPart, 10);
+      if (Number.isNaN(hour) || hour < SKI_HOURS_START || hour > SKI_HOURS_END) continue;
+      var v = temps[i];
+      if (typeof v === 'number' && !Number.isNaN(v)) {
+        if (Number.isNaN(tempMinSki) || v < tempMinSki) tempMinSki = v;
+        if (Number.isNaN(tempMaxSki) || v > tempMaxSki) tempMaxSki = v;
+      }
+    }
+  }
+
   // Snow depth: use hourly for that day; take max as "depth at that elevation".
-  let snowDepthM = 0;
+  var snowDepthM = 0;
   if (data.hourly && data.hourly.time && data.hourly.snow_depth) {
     const hours = data.hourly.time;
     const depths = data.hourly.snow_depth;
-    for (let i = 0; i < hours.length; i++) {
-      if (String(hours[i]).startsWith(date)) {
-        const v = depths[i];
+    for (var j = 0; j < hours.length; j++) {
+      if (String(hours[j]).startsWith(date)) {
+        const v = depths[j];
         if (typeof v === 'number' && !Number.isNaN(v)) snowDepthM = Math.max(snowDepthM, v);
       }
     }
   }
 
   return {
-    tempMin: tempMin != null ? Number(tempMin) : NaN,
-    tempMax: tempMax != null ? Number(tempMax) : NaN,
+    tempMin: tempMinSki,
+    tempMax: tempMaxSki,
     windMax: Math.max(
       windMax != null ? Number(windMax) : 0,
       windGust != null ? Number(windGust) : 0
     ),
-    snowDepthM,
+    snowDepthM: snowDepthM,
     snowfallSumCm: snowfallSum != null ? Number(snowfallSum) : 0,
   };
 }
 
 /**
+ * Fetch 6-day weather from Snow-Forecast feed for one location (record ID).
+ * Maps feed response to our format. Uses mid-mountain data when only one elevation is returned.
+ * @param {{ snowForecastRecordId: number }} resort - must have snowForecastRecordId
+ * @param {string} date - YYYY-MM-DD
+ * @returns {Promise<{ tempMin: number, tempMax: number, windMax: number, snowTopCm: number, snowBottomCm: number, freshSnowCm: number }>}
+ */
+async function fetchResortWeatherFromSnowForecast(resort, date) {
+  const clientId = getSnowForecastClientId();
+  const recordId = resort.snowForecastRecordId;
+  if (!clientId || recordId == null) throw new Error('Snow-Forecast: client_id and resort.snowForecastRecordId required');
+
+  const base = CONFIG.SNOW_FORECAST_API_BASE || 'https://feeds.snow-forecast.com';
+  const params = new URLSearchParams({
+    client_id: clientId,
+    record: String(recordId),
+    format: 'json',
+    units: 'metric',
+    days: '6',
+  });
+  const url = base.replace(/\/$/, '') + '/weather/feed?' + params.toString();
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Snow-Forecast feed failed: ' + res.status);
+  const data = await res.json();
+
+  const forecasts = data.Forecasts || data.forecasts || {};
+  const dayIndex = getSnowForecastDayIndex(forecasts, date);
+  const day = (Array.isArray(forecasts.dates) ? forecasts.dates[dayIndex] : null) ||
+    (Array.isArray(forecasts.date) ? forecasts.date[dayIndex] : null);
+
+  const getVal = function (obj, keys, dayIdx) {
+    if (obj == null) return null;
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var v = obj[k];
+      if (Array.isArray(v) && dayIdx >= 0 && dayIdx < v.length) return v[dayIdx];
+      if (typeof v === 'number' && dayIdx === 0) return v;
+      if (typeof v === 'number') return v;
+    }
+    return null;
+  };
+  const highTemp = getVal(forecasts, ['high-temp', 'high_temp', 'highTemp'], dayIndex);
+  const lowTemp = getVal(forecasts, ['low-temp', 'low_temp', 'lowTemp'], dayIndex);
+  const wind = getVal(forecasts, ['wind-sustained', 'wind_sustained', 'windSustained', 'wind-sustained-hourly', 'wind_sustained_max'], dayIndex);
+  const snowDepth = getVal(forecasts, ['snow-depth', 'snow_depth', 'snowDepth', 'upper-depth', 'lower-depth'], dayIndex);
+  const freshSnow = getVal(forecasts, ['forecasted-snow', 'forecasted_snow', 'forecastedSnow', 'snowfall'], dayIndex);
+
+  var snowNum = function (x) {
+    if (x == null) return 0;
+    var n = Number(x);
+    return Number.isFinite(n) ? n : 0;
+  };
+  var snowDepthCm = snowNum(snowDepth);
+  if (snowDepthCm > 0 && snowDepthCm < 10) snowDepthCm *= 100;
+
+  return {
+    tempMin: lowTemp != null ? Number(lowTemp) : NaN,
+    tempMax: highTemp != null ? Number(highTemp) : NaN,
+    windMax: wind != null ? Number(wind) : 0,
+    snowTopCm: snowDepthCm,
+    snowBottomCm: snowDepthCm,
+    freshSnowCm: snowNum(freshSnow),
+  };
+}
+
+function getSnowForecastDayIndex(forecasts, date) {
+  var dates = forecasts.dates || forecasts.date;
+  if (!Array.isArray(dates) || dates.length === 0) return 0;
+  var dateStr = date.slice(0, 10);
+  for (var i = 0; i < dates.length; i++) {
+    var d = dates[i];
+    if (d == null) continue;
+    var s = typeof d === 'string' ? d.slice(0, 10) : (d.date || d).toString().slice(0, 10);
+    if (s === dateStr) return i;
+  }
+  return 0;
+}
+
+/**
  * Get weather for top and bottom of a resort for a given date.
- * @param {{ lat: number, lon: number, elevationTop: number, elevationBottom: number }} resort
+ * Uses Snow-Forecast API when SNOW_FORECAST_CLIENT_ID and resort.snowForecastRecordId are set; otherwise Open-Meteo.
+ * Temperature min/max are taken at mid-mountain elevation (typical skiing height), not summit, so values are representative of ski hours.
+ * @param {{ lat: number, lon: number, elevationTop: number, elevationBottom: number, snowForecastRecordId?: number }} resort
  * @param {string} date - YYYY-MM-DD
  * @returns {Promise<{ tempMin: number, tempMax: number, windMax: number, snowTopCm: number, snowBottomCm: number, freshSnowCm: number }>}
  */
 async function fetchResortWeather(resort, date) {
-  const [top, bottom] = await Promise.all([
-    fetchWeatherForPoint(resort.lat, resort.lon, resort.elevationTop, date),
-    fetchWeatherForPoint(resort.lat, resort.lon, resort.elevationBottom, date),
-  ]);
+  if (hasSnowForecastFeed() && resort.snowForecastRecordId != null) {
+    try {
+      return await fetchResortWeatherFromSnowForecast(resort, date);
+    } catch (e) {
+      console.warn('Snow-Forecast feed failed, falling back to Open-Meteo:', e.message);
+    }
+  }
+
+  var midElev = Math.round((resort.elevationTop + resort.elevationBottom) / 2);
+  var topPromise = fetchWeatherForPoint(resort.lat, resort.lon, resort.elevationTop, date);
+  var bottomPromise = fetchWeatherForPoint(resort.lat, resort.lon, resort.elevationBottom, date);
+  var midPromise = fetchWeatherForPoint(resort.lat, resort.lon, midElev, date);
+
+  const [top, bottom, mid] = await Promise.all([topPromise, bottomPromise, midPromise]);
 
   return {
-    tempMin: Math.min(top.tempMin, bottom.tempMin),
-    tempMax: Math.max(top.tempMax, bottom.tempMax),
+    tempMin: mid.tempMin,
+    tempMax: mid.tempMax,
     windMax: Math.max(top.windMax, bottom.windMax),
     snowTopCm: top.snowDepthM * 100,
     snowBottomCm: bottom.snowDepthM * 100,

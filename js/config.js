@@ -11,10 +11,10 @@ var CONFIG = {
   /** Maximum distance from city to resort (km). Resorts farther than this are excluded. */
   DEFAULT_MAX_DISTANCE_KM: 150,
 
-  /** Minimum acceptable temperature on the mountain (°C). Colder is still acceptable. */
+  /** Minimum acceptable temperature at mid-mountain (°C) during ski hours (08:00–16:00). Colder is still acceptable. */
   DEFAULT_MIN_TEMP: -15,
 
-  /** Maximum acceptable temperature on the mountain (°C). Warmer = slushy snow. */
+  /** Maximum acceptable temperature at mid-mountain (°C) during ski hours (08:00–16:00). Warmer = slushy snow. */
   DEFAULT_MAX_TEMP: 5,
 
   /** Maximum acceptable wind speed (km/h). Stronger wind can close lifts. */
@@ -40,6 +40,16 @@ var CONFIG = {
 
   /** User-Agent for Nominatim (required by OSM usage policy). */
   NOMINATIM_USER_AGENT: 'SkiDayChecker/1.0 (static site; contact in README)',
+
+  /**
+   * Snow-Forecast.com API – forecast values from www.snow-forecast.com.
+   * Documentation: https://docs.snow-forecast.com (API base URL and parameters are in the docs).
+   * Set SNOW_FORECAST_CLIENT_ID and add snowForecastRecordId per resort in resorts.js as per docs.
+   * Leave SNOW_FORECAST_CLIENT_ID empty to use Open-Meteo.
+   */
+  SNOW_FORECAST_CLIENT_ID: '',
+  /** API base URL – take the correct host/path from https://docs.snow-forecast.com */
+  SNOW_FORECAST_API_BASE: 'https://feeds.snow-forecast.com',
 };
 
 // Expose for other scripts; freeze so defaults are not mutated at runtime.
