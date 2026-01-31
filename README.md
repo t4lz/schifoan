@@ -115,6 +115,8 @@ The app does **not** call a lift-status API. It assumes:
 
 Resort list and season are in `js/data/resorts.js` and can be adjusted there.
 
+**Resort list (Alps):** `js/data/resorts.js` includes a broad set of Alpine ski resorts in Germany (Bavaria/Allgäu), Austria (Tirol, Salzburg, Vorarlberg, Kärnten, Steiermark), Switzerland, France, Italy, and Slovenia. Each resort has a `bergfexSlug` so links open the Bergfex weather forecast for that resort. If a Bergfex URL changes or a resort is missing, edit the slug or add a new entry; resorts without `bergfexSlug` fall back to a Google search for `site:bergfex.com [resort name]`.
+
 ---
 
 ## Project structure
