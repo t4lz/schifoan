@@ -1,0 +1,367 @@
+/* ==========================================================================
+   Ski Day Checker – Layout and typography
+   ========================================================================== */
+
+:root {
+  --bg: #0f1419;
+  --surface: #1a2332;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --border: #30363d;
+  --success: #3fb950;
+  --success-soft: #238636;
+  --warning: #d29922;
+  --danger: #f85149;
+  --radius: 8px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --font: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* --------------------------------------------------------------------------
+   Form
+   -------------------------------------------------------------------------- */
+
+.form {
+  margin-bottom: 1.5rem;
+}
+
+.fieldset {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.fieldset legend {
+  padding: 0 0.5rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-row {
+  margin-bottom: 1rem;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row input[type="date"] {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.form-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.form-row input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-row--half {
+  display: inline-block;
+  width: calc(50% - 0.25rem);
+  vertical-align: top;
+}
+
+.form-row--half:first-of-type {
+  margin-right: 0.5rem;
+}
+
+.form-row--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-row--checkbox input {
+  width: auto;
+}
+
+.form-row--checkbox label {
+  margin-bottom: 0;
+}
+
+.form-actions {
+  margin-top: 1rem;
+}
+
+.button {
+  padding: 0.6rem 1.25rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.button:hover {
+  background: var(--accent-hover);
+}
+
+.button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Loading & Error
+   -------------------------------------------------------------------------- */
+
+.loading,
+.error {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.loading {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.error {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid var(--danger);
+  color: #ff7b72;
+}
+
+/* --------------------------------------------------------------------------
+   Result (prominent)
+   -------------------------------------------------------------------------- */
+
+.result {
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+
+.result__text {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.result__reason {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+/* Outcome-specific styling */
+.result--ja .result__text {
+  color: var(--success);
+}
+
+.result--joa .result__text {
+  color: var(--success-soft);
+}
+
+.result--geht .result__text {
+  color: var(--accent);
+}
+
+.result--nichtswirklich .result__text {
+  color: var(--warning);
+}
+
+.result--nein .result__text {
+  color: var(--danger);
+}
+
+/* --------------------------------------------------------------------------
+   Resort list (sortable table)
+   -------------------------------------------------------------------------- */
+
+.resort-list-section {
+  margin-bottom: 1.5rem;
+}
+
+.resort-list__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.resort-list-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.resort-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.resort-table__th,
+.resort-table__cell {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.resort-table__th {
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.resort-table__th--sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.resort-table__th--sortable:hover {
+  color: var(--text);
+}
+
+.resort-table__th--asc::after {
+  content: ' ▲';
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+.resort-table__th--desc::after {
+  content: ' ▼';
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+.resort-table__row:last-child .resort-table__cell {
+  border-bottom: none;
+}
+
+.resort-table__cell--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.resort-table__cell--outcome {
+  font-weight: 600;
+}
+
+.resort-table__row--ja .resort-table__cell--outcome { color: var(--success); }
+.resort-table__row--joa .resort-table__cell--outcome { color: var(--success-soft); }
+.resort-table__row--geht .resort-table__cell--outcome { color: var(--accent); }
+.resort-table__row--nichtswirklich .resort-table__cell--outcome { color: var(--warning); }
+.resort-table__row--nein .resort-table__cell--outcome { color: var(--danger); }
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.footer p {
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .form-row--half {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .result__text {
+    font-size: 1.6rem;
+  }
+
+  .resort-table__th,
+  .resort-table__cell {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}

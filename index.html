@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ist morgen ein guter Tag zum Skifahren?</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 id="page-title">Ist morgen ein guter Tag zum Skifahren?</h1>
+      <p class="tagline">Datum, Ort und Kriterien wählen – die Antwort kommt von Wetter und Entfernung.</p>
+    </header>
+
+    <div id="loading" class="loading" hidden aria-live="polite">
+      Wetter und Skigebiete werden geladen …
+    </div>
+
+    <div id="error" class="error" hidden role="alert"></div>
+
+    <section id="result" class="result" hidden aria-live="polite">
+      <p id="result-text" class="result__text"></p>
+      <p id="result-reason" class="result__reason"></p>
+    </section>
+
+    <section id="resort-list-section" class="resort-list-section" hidden>
+      <h2 class="resort-list__title">Skigebiete in Reichweite</h2>
+      <div class="resort-list-wrapper">
+        <table class="resort-table" id="resort-table">
+          <thead>
+            <tr>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="outcome" title="Klicken zum Sortieren">Ergebnis</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="name">Skigebiet</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="distanceKm">Distanz (km)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMin">Temp min (°C)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMax">Temp max (°C)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="windMax">Wind (km/h)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="snowTopCm">Schnee oben (cm)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="snowBottomCm">Schnee unten (cm)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="freshSnowCm">Neuschnee (cm)</th>
+            </tr>
+          </thead>
+          <tbody id="resort-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <form id="ski-form" class="form" aria-label="Kriterien für den Skitag">
+      <fieldset class="fieldset">
+        <legend>Datum &amp; Ort</legend>
+        <div class="form-row">
+          <label for="date">Datum</label>
+          <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-row">
+          <label for="city">Stadt (Ausgangspunkt)</label>
+          <input type="text" id="city" name="city" required placeholder="z. B. Munich" autocomplete="address-level2">
+        </div>
+        <div class="form-row">
+          <label for="max-distance">Max. Entfernung zum Berg (km)</label>
+          <input type="number" id="max-distance" name="max-distance" min="1" max="500" step="1">
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Wetter &amp; Schnee</legend>
+        <div class="form-row form-row--half">
+          <label for="min-temp">Min. Temp. am Berg (°C)</label>
+          <input type="number" id="min-temp" name="min-temp" step="0.1">
+        </div>
+        <div class="form-row form-row--half">
+          <label for="max-temp">Max. Temp. am Berg (°C)</label>
+          <input type="number" id="max-temp" name="max-temp" step="0.1">
+        </div>
+        <div class="form-row">
+          <label for="max-wind">Max. Wind (km/h)</label>
+          <input type="number" id="max-wind" name="max-wind" min="0" step="1">
+        </div>
+        <div class="form-row form-row--half">
+          <label for="min-snow-top">Min. Schnee oben (cm)</label>
+          <input type="number" id="min-snow-top" name="min-snow-top" min="0" step="1">
+        </div>
+        <div class="form-row form-row--half">
+          <label for="min-snow-bottom">Min. Schnee unten (cm)</label>
+          <input type="number" id="min-snow-bottom" name="min-snow-bottom" min="0" step="1">
+        </div>
+        <div class="form-row form-row--checkbox">
+          <input type="checkbox" id="require-fresh-snow" name="require-fresh-snow" value="1">
+          <label for="require-fresh-snow">Min. Neuschnee (nur wenn aktiviert)</label>
+        </div>
+        <div class="form-row form-row--half">
+          <label for="min-fresh-snow">Min. Neuschnee (cm)</label>
+          <input type="number" id="min-fresh-snow" name="min-fresh-snow" min="0" step="0.5" disabled>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="button">Prüfen</button>
+      </div>
+    </form>
+
+    <footer class="footer">
+      <p>
+        Statische Seite, Daten von Open-Meteo und OpenStreetMap (Nominatim).
+        Lifte/Saison: typische Saison (ca. 1.12.–15.4.). Keine Gewähr.
+      </p>
+    </footer>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data/resorts.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/decision.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
