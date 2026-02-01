@@ -87,13 +87,21 @@ var SKI_HOURS_END = 16;
  * @param {string} date - ISO date YYYY-MM-DD
  * @returns {Promise<{ tempMin: number, tempMax: number, windMax: number, snowDepthM: number, snowfallSumCm: number }>}
  */
+/** Previous calendar day in YYYY-MM-DD (for fresh snow = snow that fell before the ski day). */
+function previousDayIso(isoDate) {
+  const d = new Date(isoDate + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 async function fetchWeatherForPoint(lat, lon, elevation, date) {
+  const prevDate = previousDayIso(date);
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
     elevation: String(elevation),
     timezone: 'Europe/Berlin',
-    start_date: date,
+    start_date: prevDate,
     end_date: date,
     daily: 'snowfall_sum',
     hourly: 'temperature_2m,snow_depth,wind_speed_10m,wind_gusts_10m',
@@ -106,12 +114,13 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
   const data = await res.json();
 
   const daily = data.daily;
-  const dayIdx = (daily && daily.time && daily.time.indexOf(date)) >= 0 ? daily.time.indexOf(date) : 0;
-  // snowfall_sum = total snowfall for that calendar day (00:00–24:00 local); Open-Meteo returns mm → convert to cm
-  const snowfallSumMm = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[dayIdx] : 0;
+  // Fresh snow only: from the day *before* the ski day (snow that fell before you ski). Open-Meteo returns mm → convert to cm.
+  const prevDayIdx = (daily && daily.time && daily.time.indexOf(prevDate)) >= 0 ? daily.time.indexOf(prevDate) : 0;
+  const snowfallSumMm = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[prevDayIdx] : 0;
   const snowfallSumCm = snowfallSumMm != null ? Number(snowfallSumMm) / 10 : 0;
 
-  // Wind max during ski hours (08:00–16:00) only
+  // Below: temp, wind, snow depth = ski day only (hourly data filtered by date).
+  // Wind max during ski hours (08:00–16:00) on the ski day
   var windMaxSki = 0;
   if (data.hourly && data.hourly.time) {
     const times = data.hourly.time;
@@ -216,7 +225,9 @@ async function fetchResortWeatherFromSnowForecast(resort, date) {
   const lowTemp = getVal(forecasts, ['low-temp', 'low_temp', 'lowTemp'], dayIndex);
   const wind = getVal(forecasts, ['wind-sustained', 'wind_sustained', 'windSustained', 'wind-sustained-hourly', 'wind_sustained_max'], dayIndex);
   const snowDepth = getVal(forecasts, ['snow-depth', 'snow_depth', 'snowDepth', 'upper-depth', 'lower-depth'], dayIndex);
-  const freshSnow = getVal(forecasts, ['forecasted-snow', 'forecasted_snow', 'forecastedSnow', 'snowfall'], dayIndex);
+  // Fresh snow only: from the day before the ski day; temp, wind, snow depth = ski day (dayIndex).
+  const prevDayIndex = dayIndex > 0 ? dayIndex - 1 : 0;
+  const freshSnow = getVal(forecasts, ['forecasted-snow', 'forecasted_snow', 'forecastedSnow', 'snowfall'], prevDayIndex);
 
   var snowNum = function (x) {
     if (x == null) return 0;
