@@ -97,18 +97,21 @@ function decide(criteria, ctx) {
 
   // All hard criteria met. Grade quality for the 4 positive outcomes.
   const marginTemp = Math.min(tMax - criteria.minTemp, criteria.maxTemp - tMin);
-  const marginWind = criteria.maxWindKmh - wind;
+  const marginWind = criteria.maxWindKmh - wind;  // less wind = higher margin
   const marginSnowTop = snowTop - criteria.minSnowTopCm;
   const marginSnowBottom = snowBottom - criteria.minSnowBottomCm;
-  const marginFresh = criteria.requireFreshSnow ? fresh - criteria.minFreshSnowCm : 0;
+  // Fresh snow always boosts the score (not only when required); more fresh = better
+  const marginFresh = criteria.requireFreshSnow
+    ? Math.max(0, fresh - criteria.minFreshSnowCm)
+    : fresh;
 
-  // Simple score: sum of margins (higher = better). Normalize roughly.
+  // Simple score: sum of margins (higher = better). Wind weighted so less wind = clearly better; fresh snow counts significantly even when not required.
   const score =
     marginTemp * 2 +
-    marginWind * 0.5 +
+    marginWind +
     marginSnowTop * 0.3 +
     marginSnowBottom * 0.2 +
-    marginFresh * 0.5;
+    marginFresh * 1.2;
 
   if (score >= 25) return { outcome: 'Ja!', reason: 'Super Bedingungen.' };
   if (score >= 15) return { outcome: 'Joa', reason: 'Gute Bedingungen.' };
