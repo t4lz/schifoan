@@ -69,7 +69,7 @@ var RESORTS = [
     elevationTop: 2244,
     elevationBottom: 920,
     distanceFromMunichKm: 81,
-    bergfexSlug: 'mittenwald-karwendel',
+    bergfexSlug: 'karwendel-mittenwald',
   },
   {
     id: 'wendelstein',
