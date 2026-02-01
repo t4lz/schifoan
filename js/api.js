@@ -107,7 +107,9 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
 
   const daily = data.daily;
   const dayIdx = (daily && daily.time && daily.time.indexOf(date)) >= 0 ? daily.time.indexOf(date) : 0;
-  const snowfallSum = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[dayIdx] : 0;
+  // snowfall_sum = total snowfall for that calendar day (00:00–24:00 local); Open-Meteo returns mm → convert to cm
+  const snowfallSumMm = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[dayIdx] : 0;
+  const snowfallSumCm = snowfallSumMm != null ? Number(snowfallSumMm) / 10 : 0;
 
   // Wind max during ski hours (08:00–16:00) only
   var windMaxSki = 0;
@@ -165,7 +167,7 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
     tempMax: tempMaxSki,
     windMax: windMaxSki,
     snowDepthM: snowDepthM,
-    snowfallSumCm: snowfallSum != null ? Number(snowfallSum) : 0,
+    snowfallSumCm: snowfallSumCm,
   };
 }
 
