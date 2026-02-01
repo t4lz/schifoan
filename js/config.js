@@ -9,7 +9,7 @@ var CONFIG = {
   DEFAULT_CITY: 'Munich',
 
   /** Maximum distance from city to resort (km). Resorts farther than this are excluded. */
-  DEFAULT_MAX_DISTANCE_KM: 150,
+  DEFAULT_MAX_DISTANCE_KM: 100,
 
   /** Minimum acceptable temperature at mid-mountain (°C) during ski hours (08:00–16:00). Colder is still acceptable. */
   DEFAULT_MIN_TEMP: -15,
