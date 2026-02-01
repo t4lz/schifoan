@@ -80,7 +80,7 @@ var SKI_HOURS_END = 16;
 /**
  * Fetch weather for a single point (Open-Meteo).
  * Uses elevation for downscaling so we get mountain-appropriate values.
- * Min/max temperature are for ski hours (08:00–16:00) on the given date, not the full day.
+ * Min/max temperature and wind max are for ski hours (08:00–16:00) on the given date, not the full day.
  * @param {number} lat
  * @param {number} lon
  * @param {number} elevation - meters
@@ -95,8 +95,8 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
     timezone: 'Europe/Berlin',
     start_date: date,
     end_date: date,
-    daily: 'wind_speed_10m_max,wind_gusts_10m_max,snowfall_sum',
-    hourly: 'temperature_2m,snow_depth',
+    daily: 'snowfall_sum',
+    hourly: 'temperature_2m,snow_depth,wind_speed_10m,wind_gusts_10m',
     temperature_unit: 'celsius',
     wind_speed_unit: 'kmh',
   });
@@ -107,10 +107,25 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
 
   const daily = data.daily;
   const dayIdx = (daily && daily.time && daily.time.indexOf(date)) >= 0 ? daily.time.indexOf(date) : 0;
-
-  const windMax = Array.isArray(daily.wind_speed_10m_max) ? daily.wind_speed_10m_max[dayIdx] : null;
-  const windGust = Array.isArray(daily.wind_gusts_10m_max) ? daily.wind_gusts_10m_max[dayIdx] : null;
   const snowfallSum = Array.isArray(daily.snowfall_sum) ? daily.snowfall_sum[dayIdx] : 0;
+
+  // Wind max during ski hours (08:00–16:00) only
+  var windMaxSki = 0;
+  if (data.hourly && data.hourly.time) {
+    const times = data.hourly.time;
+    const windSpeed = data.hourly.wind_speed_10m || [];
+    const windGust = data.hourly.wind_gusts_10m || [];
+    for (var w = 0; w < times.length; w++) {
+      var t = String(times[w]);
+      if (!t.startsWith(date)) continue;
+      var hourPart = t.indexOf('T') >= 0 ? t.split('T')[1] : '';
+      var hour = parseInt(hourPart, 10);
+      if (Number.isNaN(hour) || hour < SKI_HOURS_START || hour > SKI_HOURS_END) continue;
+      var v = (typeof windSpeed[w] === 'number' ? windSpeed[w] : 0);
+      var g = (typeof windGust[w] === 'number' ? windGust[w] : 0);
+      windMaxSki = Math.max(windMaxSki, v, g);
+    }
+  }
 
   // Temp min/max during ski hours (08:00–16:00) only
   var tempMinSki = NaN;
@@ -148,10 +163,7 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
   return {
     tempMin: tempMinSki,
     tempMax: tempMaxSki,
-    windMax: Math.max(
-      windMax != null ? Number(windMax) : 0,
-      windGust != null ? Number(windGust) : 0
-    ),
+    windMax: windMaxSki,
     snowDepthM: snowDepthM,
     snowfallSumCm: snowfallSum != null ? Number(snowfallSum) : 0,
   };
