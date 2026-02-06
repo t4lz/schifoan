@@ -54,6 +54,68 @@
     if (pageTitleEl) pageTitleEl.textContent = text;
   }
 
+  /** Param names that map to form fields (id/name). */
+  var URL_PARAM_IDS = [
+    'date', 'city', 'max-distance', 'min-temp', 'max-temp', 'max-wind',
+    'min-snow-top', 'min-snow-bottom', 'require-fresh-snow', 'min-fresh-snow'
+  ];
+
+  /** Read URL search params into an object (only keys that are present). */
+  function getParamsFromUrl() {
+    var p = new URLSearchParams(window.location.search);
+    var out = {};
+    for (var i = 0; i < URL_PARAM_IDS.length; i++) {
+      var key = URL_PARAM_IDS[i];
+      var v = p.get(key);
+      if (v != null && v !== '') out[key] = v;
+    }
+    return out;
+  }
+
+  /** Apply URL params to form (missing params leave defaults). */
+  function applyParamsToForm(params) {
+    for (var key in params) {
+      var el = document.getElementById(key);
+      if (!el) continue;
+      if (el.type === 'checkbox') {
+        el.checked = (params[key] === '1' || params[key] === 'true');
+      } else {
+        el.value = params[key];
+      }
+    }
+    var freshCheck = document.getElementById('require-fresh-snow');
+    var minFresh = document.getElementById('min-fresh-snow');
+    if (freshCheck && minFresh) minFresh.disabled = !freshCheck.checked;
+  }
+
+  /** Current form state as object for URL (all settable vars). */
+  function getFormStateForUrl() {
+    var cityEl = document.getElementById('city');
+    var freshCheck = document.getElementById('require-fresh-snow');
+    return {
+      'date': getSelectedDate(),
+      'city': (cityEl && cityEl.value.trim()) ? cityEl.value.trim() : CONFIG.DEFAULT_CITY,
+      'max-distance': (document.getElementById('max-distance') || {}).value || CONFIG.DEFAULT_MAX_DISTANCE_KM,
+      'min-temp': (document.getElementById('min-temp') || {}).value || CONFIG.DEFAULT_MIN_TEMP,
+      'max-temp': (document.getElementById('max-temp') || {}).value || CONFIG.DEFAULT_MAX_TEMP,
+      'max-wind': (document.getElementById('max-wind') || {}).value || CONFIG.DEFAULT_MAX_WIND_KMH,
+      'min-snow-top': (document.getElementById('min-snow-top') || {}).value || CONFIG.DEFAULT_MIN_SNOW_TOP_CM,
+      'min-snow-bottom': (document.getElementById('min-snow-bottom') || {}).value || CONFIG.DEFAULT_MIN_SNOW_BOTTOM_CM,
+      'require-fresh-snow': (freshCheck && freshCheck.checked) ? '1' : '0',
+      'min-fresh-snow': (document.getElementById('min-fresh-snow') || {}).value || CONFIG.DEFAULT_MIN_FRESH_SNOW_CM
+    };
+  }
+
+  /** Update browser URL to current form state (shareable link). */
+  function updateUrlFromForm() {
+    var state = getFormStateForUrl();
+    var p = new URLSearchParams();
+    for (var k in state) p.set(k, String(state[k]));
+    var search = p.toString();
+    var url = search ? window.location.pathname + '?' + search : window.location.pathname;
+    history.replaceState(null, '', url);
+  }
+
   /** Set form defaults (date = tomorrow, city = Munich, CONFIG defaults). */
   function setDefaults() {
     const dateInput = document.getElementById('date');
@@ -301,6 +363,7 @@
   }
 
   async function runCheck() {
+    updateUrlFromForm();
     const date = getSelectedDate();
     const criteria = getCriteria();
     const cityInput = document.getElementById('city');
@@ -389,6 +452,8 @@
 
   function init() {
     setDefaults();
+    applyParamsToForm(getParamsFromUrl());
+    updateTitle(getSelectedDate());
     if (form) form.addEventListener('submit', function (e) { e.preventDefault(); runCheck(); });
     const dateInput = document.getElementById('date');
     if (dateInput) dateInput.addEventListener('change', function () { updateTitle(getSelectedDate()); });
@@ -412,6 +477,10 @@
         sortAndRenderResortTable();
       });
     }
+    window.addEventListener('popstate', function () {
+      applyParamsToForm(getParamsFromUrl());
+      updateTitle(getSelectedDate());
+    });
     runCheck();
   }
 
