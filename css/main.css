@@ -428,6 +428,19 @@ body {
   margin: 0;
 }
 
+.footer__link {
+  margin-top: 0.75rem;
+}
+
+.footer__link a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footer__link a:hover {
+  text-decoration: underline;
+}
+
 /* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */
