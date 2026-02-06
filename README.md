@@ -1,3 +1,5 @@
+https://schifoan24.de/
+
 # Ist morgen ein guter Tag zum Skifahren?
 
 A **static** website that answers whether a given day is good for skiing, based on:
