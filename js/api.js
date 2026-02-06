@@ -30,7 +30,10 @@ async function geocodeCity(city) {
   const res = await fetch(url, {
     headers: { 'Accept': 'application/json', 'User-Agent': CONFIG.NOMINATIM_USER_AGENT },
   });
-  if (!res.ok) throw new Error(`Geocoding failed: ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 429) throw new Error('Zu viele Anfragen. Bitte etwa eine Minute warten und erneut auf „Prüfen“ klicken.');
+    throw new Error(`Geocoding failed: ${res.status}`);
+  }
   const data = await res.json();
   if (!Array.isArray(data) || data.length === 0) throw new Error(`City not found: ${city}`);
   const first = data[0];
@@ -110,7 +113,10 @@ async function fetchWeatherForPoint(lat, lon, elevation, date) {
   });
   const url = `${CONFIG.OPEN_METEO_BASE}?${params}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Weather failed: ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 429) throw new Error('Zu viele Anfragen. Bitte etwa eine Minute warten und erneut auf „Prüfen“ klicken.');
+    throw new Error(`Weather failed: ${res.status}`);
+  }
   const data = await res.json();
 
   const daily = data.daily;
@@ -202,7 +208,10 @@ async function fetchResortWeatherFromSnowForecast(resort, date) {
   });
   const url = base.replace(/\/$/, '') + '/weather/feed?' + params.toString();
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Snow-Forecast feed failed: ' + res.status);
+  if (!res.ok) {
+    if (res.status === 429) throw new Error('Zu viele Anfragen. Bitte etwa eine Minute warten und erneut auf „Prüfen“ klicken.');
+    throw new Error('Snow-Forecast feed failed: ' + res.status);
+  }
   const data = await res.json();
 
   const forecasts = data.Forecasts || data.forecasts || {};

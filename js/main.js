@@ -120,6 +120,7 @@
     if (loadingEl) loadingEl.hidden = true;
     if (errorEl) {
       errorEl.textContent = message;
+      errorEl.classList.toggle('error--rate-limit', message.indexOf('Zu viele Anfragen') !== -1);
       errorEl.hidden = false;
     }
     if (resultEl) resultEl.hidden = true;
@@ -378,7 +379,11 @@
         sortAndRenderResortTable();
       }
     } catch (err) {
-      showError(err.message || 'Ein Fehler ist aufgetreten.');
+      var msg = err.message || 'Ein Fehler ist aufgetreten.';
+      if (String(msg).indexOf('429') !== -1 || String(msg).indexOf('Zu viele Anfragen') !== -1) {
+        msg = 'Zu viele Anfragen. Bitte etwa eine Minute warten und erneut auf „Prüfen“ klicken.';
+      }
+      showError(msg);
     }
   }
 
