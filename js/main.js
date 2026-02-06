@@ -63,6 +63,12 @@
   /** Keys that were in the URL when the page loaded (so we keep them in the URL when updating). */
   var initialUrlParamKeys = [];
 
+  /** Keys for fields the user has set in the UI (so we persist them in the URL). */
+  var userSetParamKeys = [];
+
+  /** True while applying URL params to form (so we don't mark those as user-set). */
+  var applyingUrlParams = false;
+
   /** Read URL search params into an object (only keys that are present). */
   function getParamsFromUrl() {
     var p = new URLSearchParams(window.location.search);
@@ -77,18 +83,23 @@
 
   /** Apply URL params to form (missing params leave defaults). */
   function applyParamsToForm(params) {
-    for (var key in params) {
-      var el = document.getElementById(key);
-      if (!el) continue;
-      if (el.type === 'checkbox') {
-        el.checked = (params[key] === '1' || params[key] === 'true');
-      } else {
-        el.value = params[key];
+    applyingUrlParams = true;
+    try {
+      for (var key in params) {
+        var el = document.getElementById(key);
+        if (!el) continue;
+        if (el.type === 'checkbox') {
+          el.checked = (params[key] === '1' || params[key] === 'true');
+        } else {
+          el.value = params[key];
+        }
       }
+      var freshCheck = document.getElementById('require-fresh-snow');
+      var minFresh = document.getElementById('min-fresh-snow');
+      if (freshCheck && minFresh) minFresh.disabled = !freshCheck.checked;
+    } finally {
+      applyingUrlParams = false;
     }
-    var freshCheck = document.getElementById('require-fresh-snow');
-    var minFresh = document.getElementById('min-fresh-snow');
-    if (freshCheck && minFresh) minFresh.disabled = !freshCheck.checked;
   }
 
   /** Current form state as object for URL (all settable vars). */
@@ -109,32 +120,21 @@
     };
   }
 
-  /** Default form state (same keys as getFormStateForUrl(), for comparison). */
-  function getDefaultFormState() {
-    return {
-      'date': getTomorrowISO(),
-      'city': CONFIG.DEFAULT_CITY,
-      'max-distance': String(CONFIG.DEFAULT_MAX_DISTANCE_KM),
-      'min-temp': String(CONFIG.DEFAULT_MIN_TEMP),
-      'max-temp': String(CONFIG.DEFAULT_MAX_TEMP),
-      'max-wind': String(CONFIG.DEFAULT_MAX_WIND_KMH),
-      'min-snow-top': String(CONFIG.DEFAULT_MIN_SNOW_TOP_CM),
-      'min-snow-bottom': String(CONFIG.DEFAULT_MIN_SNOW_BOTTOM_CM),
-      'require-fresh-snow': '0',
-      'min-fresh-snow': String(CONFIG.DEFAULT_MIN_FRESH_SNOW_CM)
-    };
+  /** Mark a param as user-set (so it gets saved in the URL). Called from change handlers. */
+  function markParamAsUserSet(key) {
+    if (applyingUrlParams) return;
+    if (userSetParamKeys.indexOf(key) < 0) userSetParamKeys.push(key);
   }
 
-  /** Update browser URL: only include params that were in the initial URL or differ from default. */
+  /** Update browser URL: only include params that were in the initial URL or that the user set in the UI. */
   function updateUrlFromForm() {
     var state = getFormStateForUrl();
-    var defaults = getDefaultFormState();
     var p = new URLSearchParams();
     for (var i = 0; i < URL_PARAM_IDS.length; i++) {
       var k = URL_PARAM_IDS[i];
       var inInitial = initialUrlParamKeys.indexOf(k) >= 0;
-      var changed = String(state[k]) !== String(defaults[k]);
-      if (inInitial || changed) p.set(k, String(state[k]));
+      var userSet = userSetParamKeys.indexOf(k) >= 0;
+      if (inInitial || userSet) p.set(k, String(state[k]));
     }
     var search = p.toString();
     var url = search ? window.location.pathname + '?' + search : window.location.pathname;
@@ -475,12 +475,25 @@
     }
   }
 
+  /** Attach change listeners so we track which fields the user has set in the UI. */
+  function attachUserSetListeners() {
+    for (var i = 0; i < URL_PARAM_IDS.length; i++) {
+      var key = URL_PARAM_IDS[i];
+      var el = document.getElementById(key);
+      if (!el) continue;
+      el.addEventListener('change', function (k) {
+        return function () { markParamAsUserSet(k); };
+      }(key));
+    }
+  }
+
   function init() {
     setDefaults();
     var urlParams = getParamsFromUrl();
     initialUrlParamKeys = Object.keys(urlParams);
     applyParamsToForm(urlParams);
     updateTitle(getSelectedDate());
+    attachUserSetListeners();
     if (form) form.addEventListener('submit', function (e) { e.preventDefault(); runCheck(); });
     const dateInput = document.getElementById('date');
     if (dateInput) dateInput.addEventListener('change', function () { updateTitle(getSelectedDate()); });
