@@ -27,6 +27,9 @@
   /** Criteria and city from last run (for cell coloring and links). */
   let lastCriteria = null;
   let lastCity = '';
+  /** Last result shown (so we can re-display in new language on language change). */
+  let lastOutcome = null;
+  let lastReasonObj = null;
 
   /** Get tomorrow in local date as YYYY-MM-DD. */
   function getTomorrowISO() {
@@ -205,11 +208,11 @@
     if (resortListSection) resortListSection.hidden = true;
   }
 
-  function showError(message) {
+  function showError(message, opts) {
     if (loadingEl) loadingEl.hidden = true;
     if (errorEl) {
       errorEl.textContent = message;
-      errorEl.classList.toggle('error--rate-limit', message.indexOf('Zu viele Anfragen') !== -1);
+      errorEl.classList.toggle('error--rate-limit', !!(opts && opts.rateLimit));
       errorEl.hidden = false;
     }
     if (resultEl) resultEl.hidden = true;
@@ -217,6 +220,8 @@
   }
 
   function showResult(outcome, reason) {
+    lastOutcome = outcome;
+    lastReasonObj = reason;
     if (loadingEl) loadingEl.hidden = true;
     if (errorEl) errorEl.hidden = true;
     if (resultEl) {
@@ -358,7 +363,8 @@
       let html = '';
       columns.forEach(function (col) {
         const status = getCellStatus(col.key, row);
-        const text = col.key === 'outcome' || col.key === 'name' ? escapeHtml(row[col.key] || '') : col.format(row);
+        const rawText = col.format(row);
+        const text = (col.key === 'outcome' || col.key === 'name') ? escapeHtml(rawText) : rawText;
         const href = getCellLink(col.key, row);
         const cellClass = 'resort-table__cell resort-table__cell--' + status +
           (col.key === 'outcome' ? ' resort-table__cell--outcome' : '') +
@@ -471,10 +477,9 @@
       }
     } catch (err) {
       var msg = err.message || I18N.t('error_generic');
-      if (String(msg).indexOf('429') !== -1 || String(msg).indexOf('Zu viele Anfragen') !== -1) {
-        msg = I18N.t('error_rate_limit');
-      }
-      showError(msg);
+      var isRateLimit = String(msg).indexOf('429') !== -1 || String(msg).indexOf('Zu viele Anfragen') !== -1;
+      if (isRateLimit) msg = I18N.t('error_rate_limit');
+      showError(msg, { rateLimit: isRateLimit });
     }
   }
 
@@ -505,14 +510,12 @@
         I18N.setLanguage(lang);
         var p = new URLSearchParams(window.location.search);
         p.set('lang', lang);
-        var url = window.location.pathname + '?' + p.toString();
-        history.replaceState(null, '', url);
-        updateTitle(getSelectedDate());
-        if (resortListSection && !resortListSection.hidden) sortAndRenderResortTable();
+        history.replaceState(null, '', window.location.pathname + '?' + p.toString());
       });
     }
     window.addEventListener('languagechange', function () {
       updateTitle(getSelectedDate());
+      if (lastOutcome != null) showResult(lastOutcome, lastReasonObj);
       if (resortListSection && !resortListSection.hidden) sortAndRenderResortTable();
     });
     updateTitle(getSelectedDate());
