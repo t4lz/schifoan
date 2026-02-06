@@ -54,16 +54,17 @@ function outcomeRank(outcome) {
 
 /**
  * Compute the ski-day outcome from criteria and weather context.
+ * Returns reasonKey + reasonParams for i18n; caller uses t(reasonKey, reasonParams).
  * @param {Criteria} criteria
  * @param {WeatherContext} ctx
- * @returns {{ outcome: string, reason?: string }}
+ * @returns {{ outcome: string, reasonKey: string, reasonParams?: Object }}
  */
 function decide(criteria, ctx) {
   if (!ctx.liftsOpen) {
-    return { outcome: 'Nein.', reason: 'Lifte/Pisten sind außerhalb der Saison oder geschlossen.' };
+    return { outcome: 'Nein.', reasonKey: 'reason_lifts_closed' };
   }
   if (!ctx.resortInRange) {
-    return { outcome: 'Nein.', reason: 'Kein Skigebiet in der gewählten maximalen Entfernung.' };
+    return { outcome: 'Nein.', reasonKey: 'reason_no_resort_in_range' };
   }
 
   const tMin = ctx.tempMin;
@@ -80,19 +81,19 @@ function decide(criteria, ctx) {
   const freshOk = !criteria.requireFreshSnow || fresh >= criteria.minFreshSnowCm;
 
   if (!tempOk) {
-    return { outcome: 'Nein.', reason: `Temperatur außerhalb des Bereichs (min ${criteria.minTemp}°C – max ${criteria.maxTemp}°C).` };
+    return { outcome: 'Nein.', reasonKey: 'reason_temp_range', reasonParams: { min: criteria.minTemp, max: criteria.maxTemp } };
   }
   if (!windOk) {
-    return { outcome: 'Nein.', reason: `Wind zu stark (max ${criteria.maxWindKmh} km/h).` };
+    return { outcome: 'Nein.', reasonKey: 'reason_wind', reasonParams: { max: criteria.maxWindKmh } };
   }
   if (!snowTopOk) {
-    return { outcome: 'Nein.', reason: `Zu wenig Schnee oben (min ${criteria.minSnowTopCm} cm).` };
+    return { outcome: 'Nein.', reasonKey: 'reason_snow_top', reasonParams: { min: criteria.minSnowTopCm } };
   }
   if (!snowBottomOk) {
-    return { outcome: 'Nein.', reason: `Zu wenig Schnee unten (min ${criteria.minSnowBottomCm} cm).` };
+    return { outcome: 'Nein.', reasonKey: 'reason_snow_bottom', reasonParams: { min: criteria.minSnowBottomCm } };
   }
   if (!freshOk) {
-    return { outcome: 'Nein.', reason: `Zu wenig Neuschnee (min ${criteria.minFreshSnowCm} cm).` };
+    return { outcome: 'Nein.', reasonKey: 'reason_fresh_snow', reasonParams: { min: criteria.minFreshSnowCm } };
   }
 
   // All hard criteria met. Grade quality for the 4 positive outcomes.
@@ -113,8 +114,8 @@ function decide(criteria, ctx) {
     marginSnowBottom * 0.2 +
     marginFresh * 1.2;
 
-  if (score >= 25) return { outcome: 'Ja!', reason: 'Super Bedingungen.' };
-  if (score >= 15) return { outcome: 'Joa', reason: 'Gute Bedingungen.' };
-  if (score >= 8) return { outcome: 'geht', reason: 'Akzeptable Bedingungen.' };
-  return { outcome: 'nicht so wirklich', reason: 'Knapp erfüllt, aber nicht ideal.' };
+  if (score >= 25) return { outcome: 'Ja!', reasonKey: 'reason_super' };
+  if (score >= 15) return { outcome: 'Joa', reasonKey: 'reason_good' };
+  if (score >= 8) return { outcome: 'geht', reasonKey: 'reason_ok' };
+  return { outcome: 'nicht so wirklich', reasonKey: 'reason_marginal' };
 }

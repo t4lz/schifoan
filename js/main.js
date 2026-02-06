@@ -3,7 +3,7 @@
  * Depends: CONFIG, RESORTS, SEASON (config + data), api.js, decision.js.
  */
 
-/* global CONFIG, RESORTS, SEASON, geocodeCity, findResortsInRange, getResortWeatherBatch, isInSeason, decide, outcomeRank, OUTCOMES */
+/* global CONFIG, RESORTS, SEASON, I18N, geocodeCity, findResortsInRange, getResortWeatherBatch, isInSeason, decide, outcomeRank, OUTCOMES */
 
 (function () {
   'use strict';
@@ -35,21 +35,22 @@
     return d.toISOString().slice(0, 10);
   }
 
-  /** Format date for title: e.g. "Samstag, 01.02.2025". */
+  var DAY_KEYS = ['daySun', 'dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat'];
+
+  /** Format date for title: e.g. "Samstag, 01.02.2025" (localized). */
   function formatDateForTitle(isoDate) {
-    const d = new Date(isoDate + 'T12:00:00');
-    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    const dayName = days[d.getDay()];
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${dayName}, ${day}.${month}.${year}`;
+    var d = new Date(isoDate + 'T12:00:00');
+    var dayName = I18N.t(DAY_KEYS[d.getDay()]);
+    var day = String(d.getDate()).padStart(2, '0');
+    var month = String(d.getMonth() + 1).padStart(2, '0');
+    var year = d.getFullYear();
+    return dayName + ', ' + day + '.' + month + '.' + year;
   }
 
   /** Update document title and visible h1 based on selected date. */
   function updateTitle(isoDate) {
-    const label = formatDateForTitle(isoDate);
-    const text = `Ist ${label} ein guter Tag zum Skifahren?`;
+    var label = formatDateForTitle(isoDate);
+    var text = I18N.t('titleQuestion', { date: label });
     if (titleEl) titleEl.textContent = text;
     if (pageTitleEl) pageTitleEl.textContent = text;
   }
@@ -126,7 +127,7 @@
     if (userSetParamKeys.indexOf(key) < 0) userSetParamKeys.push(key);
   }
 
-  /** Update browser URL: only include params that were in the initial URL or that the user set in the UI. */
+  /** Update browser URL: only include params that were in the initial URL or that the user set in the UI; always include lang. */
   function updateUrlFromForm() {
     var state = getFormStateForUrl();
     var p = new URLSearchParams();
@@ -136,8 +137,9 @@
       var userSet = userSetParamKeys.indexOf(k) >= 0;
       if (inInitial || userSet) p.set(k, String(state[k]));
     }
+    p.set('lang', I18N.getLang());
     var search = p.toString();
-    var url = search ? window.location.pathname + '?' + search : window.location.pathname;
+    var url = window.location.pathname + '?' + search;
     history.replaceState(null, '', url);
   }
 
@@ -219,8 +221,16 @@
     if (errorEl) errorEl.hidden = true;
     if (resultEl) {
       resultEl.hidden = false;
-      if (resultTextEl) resultTextEl.textContent = outcome;
-      if (resultReasonEl) resultReasonEl.textContent = reason || '';
+      if (resultTextEl) resultTextEl.textContent = I18N.t(I18N.outcomeDisplayKey(outcome));
+      var reasonText = '';
+      if (reason) {
+        if (typeof reason === 'object' && reason.reasonKey) {
+          reasonText = I18N.t(reason.reasonKey, reason.reasonParams || {});
+        } else {
+          reasonText = typeof reason === 'string' ? I18N.t(reason) : '';
+        }
+      }
+      if (resultReasonEl) resultReasonEl.textContent = reasonText;
       resultEl.className = 'result result--' + outcome.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'result';
     }
   }
@@ -332,7 +342,7 @@
     if (!resortTableBody) return;
     resortTableBody.innerHTML = '';
     const columns = [
-      { key: 'outcome', format: function (r) { return r.outcome || ''; }, decimals: null },
+      { key: 'outcome', format: function (r) { return r.outcome ? I18N.t(I18N.outcomeDisplayKey(r.outcome)) : ''; }, decimals: null },
       { key: 'name', format: function (r) { return r.name || ''; }, decimals: null },
       { key: 'distanceKm', format: function (r) { return formatNum(r.distanceKm, 0); }, decimals: 0 },
       { key: 'tempMin', format: function (r) { return formatNum(r.tempMin, 0); }, decimals: 0 },
@@ -402,10 +412,7 @@
       const resorts = await findResortsInRange(cityCoords, criteria.maxDistanceKm);
 
       if (resorts.length === 0) {
-        showResult(
-          'Nein.',
-          'Kein Skigebiet in der gewählten maximalen Entfernung.'
-        );
+        showResult('Nein.', { reasonKey: 'reason_no_resort_in_range' });
         resortRows = [];
         if (resortListSection) resortListSection.hidden = true;
         return;
@@ -428,15 +435,16 @@
           resortName: resort.name,
           distanceKm: resort.distanceKm,
         };
-        const { outcome, reason } = decide(criteria, ctx);
+        const decided = decide(criteria, ctx);
         rows.push({
           name: resort.name,
           lat: resort.lat,
           lon: resort.lon,
           bergfexSlug: resort.bergfexSlug,
           distanceKm: resort.distanceKm,
-          outcome,
-          reason,
+          outcome: decided.outcome,
+          reasonKey: decided.reasonKey,
+          reasonParams: decided.reasonParams,
           tempMin: weather.tempMin,
           tempMax: weather.tempMax,
           windMax: weather.windMax,
@@ -451,15 +459,10 @@
       resortRows = rows;
       const overallOutcome = bestOutcome(rows.map(function (r) { return r.outcome; }));
       const positiveCount = rows.filter(function (r) { return r.outcome !== 'Nein.'; }).length;
-      let reason = '';
-      if (positiveCount === 0) {
-        reason = 'Keines der Skigebiete in Reichweite erfüllt die Kriterien.';
-      } else if (positiveCount === 1) {
-        reason = 'Ein Skigebiet in Reichweite erfüllt die Kriterien.';
-      } else {
-        reason = positiveCount + ' Skigebiete in Reichweite erfüllen die Kriterien.';
-      }
-      showResult(overallOutcome, reason);
+      var reasonObj = { reasonKey: 'reason_no_resorts_match' };
+      if (positiveCount === 1) reasonObj = { reasonKey: 'reason_one_resort_matches' };
+      else if (positiveCount > 1) reasonObj = { reasonKey: 'reason_many_resorts_matches', reasonParams: { count: positiveCount } };
+      showResult(overallOutcome, reasonObj);
 
       if (resortListSection) {
         resortListSection.hidden = false;
@@ -467,9 +470,9 @@
         sortAndRenderResortTable();
       }
     } catch (err) {
-      var msg = err.message || 'Ein Fehler ist aufgetreten.';
+      var msg = err.message || I18N.t('error_generic');
       if (String(msg).indexOf('429') !== -1 || String(msg).indexOf('Zu viele Anfragen') !== -1) {
-        msg = 'Zu viele Anfragen. Bitte etwa eine Minute warten und erneut auf „Prüfen“ klicken.';
+        msg = I18N.t('error_rate_limit');
       }
       showError(msg);
     }
@@ -488,10 +491,30 @@
   }
 
   function init() {
+    var langFromUrl = I18N.initFromStorageOrUrl();
     setDefaults();
     var urlParams = getParamsFromUrl();
+    if (urlParams.lang) I18N.setLanguage(urlParams.lang);
     initialUrlParamKeys = Object.keys(urlParams);
     applyParamsToForm(urlParams);
+    var langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      langSelect.value = I18N.getLang();
+      langSelect.addEventListener('change', function () {
+        var lang = langSelect.value;
+        I18N.setLanguage(lang);
+        var p = new URLSearchParams(window.location.search);
+        p.set('lang', lang);
+        var url = window.location.pathname + '?' + p.toString();
+        history.replaceState(null, '', url);
+        updateTitle(getSelectedDate());
+        if (resortListSection && !resortListSection.hidden) sortAndRenderResortTable();
+      });
+    }
+    window.addEventListener('languagechange', function () {
+      updateTitle(getSelectedDate());
+      if (resortListSection && !resortListSection.hidden) sortAndRenderResortTable();
+    });
     updateTitle(getSelectedDate());
     attachUserSetListeners();
     if (form) form.addEventListener('submit', function (e) { e.preventDefault(); runCheck(); });

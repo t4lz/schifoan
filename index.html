@@ -9,11 +9,22 @@
 <body>
   <div class="container">
     <header class="header">
-      <h1 id="page-title">Ist morgen ein guter Tag zum Skifahren?</h1>
-      <p class="tagline">Datum, Ort und Kriterien wählen – die Antwort kommt von Wetter und Entfernung.</p>
+      <div class="header__top">
+        <h1 id="page-title" class="header__title">Ist morgen ein guter Tag zum Skifahren?</h1>
+        <div class="lang-picker" aria-label="Language">
+          <label for="lang-select" class="lang-picker__label" data-i18n="languageLabel">Sprache</label>
+          <select id="lang-select" class="lang-picker__select" title="Language">
+            <option value="de" selected>Deutsch</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+          </select>
+        </div>
+      </div>
+      <p class="tagline" data-i18n="tagline">Datum, Ort und Kriterien wählen – die Antwort kommt von Wetter und Entfernung.</p>
     </header>
 
-    <div id="loading" class="loading" hidden aria-live="polite">
+    <div id="loading" class="loading" hidden aria-live="polite" data-i18n="loading">
       Wetter und Skigebiete werden geladen …
     </div>
 
@@ -25,20 +36,20 @@
     </section>
 
     <section id="resort-list-section" class="resort-list-section" hidden>
-      <h2 class="resort-list__title">Skigebiete in Reichweite</h2>
+      <h2 class="resort-list__title" data-i18n="resortListTitle">Skigebiete in Reichweite</h2>
       <div class="resort-list-wrapper">
         <table class="resort-table" id="resort-table">
           <thead>
             <tr>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="outcome" title="Klicken zum Sortieren">Ergebnis</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="name">Skigebiet</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="distanceKm">Distanz (km)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMin">Temp min (°C)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMax">Temp max (°C)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="windMax">Wind (km/h)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="snowTopCm">Schnee oben (cm)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="snowBottomCm">Schnee unten (cm)</th>
-              <th class="resort-table__th resort-table__th--sortable" data-sort="freshSnowCm">Neuschnee (cm)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="outcome" data-i18n="thOutcome" data-i18n-title="sortTitle">Ergebnis</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="name" data-i18n="thResort">Skigebiet</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="distanceKm" data-i18n="thDistance">Distanz (km)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMin" data-i18n="thTempMin">Temp min (°C)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="tempMax" data-i18n="thTempMax">Temp max (°C)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="windMax" data-i18n="thWind">Wind (km/h)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="snowTopCm" data-i18n="thSnowTop">Schnee oben (cm)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="snowBottomCm" data-i18n="thSnowBottom">Schnee unten (cm)</th>
+              <th class="resort-table__th resort-table__th--sortable" data-sort="freshSnowCm" data-i18n="thFreshSnow">Neuschnee (cm)</th>
             </tr>
           </thead>
           <tbody id="resort-table-body"></tbody>
@@ -46,62 +57,62 @@
       </div>
     </section>
 
-    <form id="ski-form" class="form" aria-label="Kriterien für den Skitag">
+    <form id="ski-form" class="form" data-i18n="formAriaLabel" data-i18n-attr="aria-label">
       <fieldset class="fieldset">
-        <legend>Datum &amp; Ort</legend>
+        <legend data-i18n="legendDatePlace">Datum &amp; Ort</legend>
         <div class="form-row">
-          <label for="date">Datum</label>
+          <label for="date" data-i18n="labelDate">Datum</label>
           <input type="date" id="date" name="date" required>
         </div>
         <div class="form-row">
-          <label for="city">Stadt (Ausgangspunkt)</label>
-          <input type="text" id="city" name="city" required placeholder="z. B. Munich" autocomplete="address-level2">
+          <label for="city" data-i18n="labelCity">Stadt (Ausgangspunkt)</label>
+          <input type="text" id="city" name="city" required data-i18n-placeholder="placeholderCity" autocomplete="address-level2">
         </div>
         <div class="form-row">
-          <label for="max-distance">Max. Entfernung zum Berg (km)</label>
+          <label for="max-distance" data-i18n="labelMaxDistance">Max. Entfernung zum Berg (km)</label>
           <input type="number" id="max-distance" name="max-distance" min="1" max="500" step="1">
         </div>
       </fieldset>
 
       <fieldset class="fieldset">
-        <legend>Wetter &amp; Schnee</legend>
+        <legend data-i18n="legendWeatherSnow">Wetter &amp; Schnee</legend>
         <div class="form-row form-row--half">
-          <label for="min-temp">Min. Temp. am Berg (°C)</label>
+          <label for="min-temp" data-i18n="labelMinTemp">Min. Temp. am Berg (°C)</label>
           <input type="number" id="min-temp" name="min-temp" step="0.1">
         </div>
         <div class="form-row form-row--half">
-          <label for="max-temp">Max. Temp. am Berg (°C)</label>
+          <label for="max-temp" data-i18n="labelMaxTemp">Max. Temp. am Berg (°C)</label>
           <input type="number" id="max-temp" name="max-temp" step="0.1">
         </div>
         <div class="form-row">
-          <label for="max-wind">Max. Wind (km/h)</label>
+          <label for="max-wind" data-i18n="labelMaxWind">Max. Wind (km/h)</label>
           <input type="number" id="max-wind" name="max-wind" min="0" step="1">
         </div>
         <div class="form-row form-row--half">
-          <label for="min-snow-top">Min. Schnee oben (cm)</label>
+          <label for="min-snow-top" data-i18n="labelMinSnowTop">Min. Schnee oben (cm)</label>
           <input type="number" id="min-snow-top" name="min-snow-top" min="0" step="1">
         </div>
         <div class="form-row form-row--half">
-          <label for="min-snow-bottom">Min. Schnee unten (cm)</label>
+          <label for="min-snow-bottom" data-i18n="labelMinSnowBottom">Min. Schnee unten (cm)</label>
           <input type="number" id="min-snow-bottom" name="min-snow-bottom" min="0" step="1">
         </div>
         <div class="form-row form-row--checkbox">
           <input type="checkbox" id="require-fresh-snow" name="require-fresh-snow" value="1">
-          <label for="require-fresh-snow">Min. Neuschnee (nur wenn aktiviert)</label>
+          <label for="require-fresh-snow" data-i18n="labelRequireFreshSnow">Min. Neuschnee (nur wenn aktiviert)</label>
         </div>
         <div class="form-row form-row--half">
-          <label for="min-fresh-snow">Min. Neuschnee (cm)</label>
+          <label for="min-fresh-snow" data-i18n="labelMinFreshSnow">Min. Neuschnee (cm)</label>
           <input type="number" id="min-fresh-snow" name="min-fresh-snow" min="0" step="0.5" disabled>
         </div>
       </fieldset>
 
       <div class="form-actions">
-        <button type="submit" class="button">Prüfen</button>
+        <button type="submit" class="button" data-i18n="buttonCheck">Prüfen</button>
       </div>
     </form>
 
     <footer class="footer">
-      <p>
+      <p data-i18n="footer">
         Statische Seite, Daten von Open-Meteo und OpenStreetMap (Nominatim).
         Lifte/Saison: typische Saison (ca. 1.12.–15.4.). Keine Gewähr.
       </p>
@@ -110,6 +121,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/data/resorts.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/decision.js"></script>
   <script src="js/main.js"></script>

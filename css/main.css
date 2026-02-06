@@ -54,6 +54,51 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.header__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.header__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lang-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lang-picker__label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.lang-picker__select {
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+}
+
+.lang-picker__select:hover,
+.lang-picker__select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .header h1 {
   margin: 0 0 0.5rem;
   font-size: 1.5rem;
