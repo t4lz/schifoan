@@ -79,7 +79,7 @@ var RESORTS = [
     elevationTop: 1838,
     elevationBottom: 780,
     distanceFromMunichKm: 65,
-    bergfexSlug: 'wendelstein',
+    bergfexSlug: 'wendelstein-bayrischzell',
   },
   {
     id: 'tegernsee',
@@ -99,7 +99,7 @@ var RESORTS = [
     elevationTop: 2224,
     elevationBottom: 800,
     distanceFromMunichKm: 155,
-    bergfexSlug: 'oberstdorf-kleinwalsertal',
+    bergfexSlug: 'nebelhorn-oberstdorf',
   },
   {
     id: 'garmisch-classic',
@@ -109,7 +109,7 @@ var RESORTS = [
     elevationTop: 2628,
     elevationBottom: 720,
     distanceFromMunichKm: 92,
-    bergfexSlug: 'garmisch-classic',
+    bergfexSlug: 'garmisch-partenkirchen',
   },
   {
     id: 'fellhorn',
@@ -119,7 +119,7 @@ var RESORTS = [
     elevationTop: 1950,
     elevationBottom: 800,
     distanceFromMunichKm: 165,
-    bergfexSlug: 'fellhorn-kanzelwand',
+    bergfexSlug: 'fellhorn',
   },
   {
     id: 'balderschwang',
@@ -129,7 +129,7 @@ var RESORTS = [
     elevationTop: 1600,
     elevationBottom: 1044,
     distanceFromMunichKm: 175,
-    bergfexSlug: 'balderschwang',
+    bergfexSlug: 'balderschwang-hochschelpenlifte',
   },
   // —— Austria (Tirol, Salzburg, Vorarlberg, Kärnten, Steiermark) ——
   {
@@ -390,7 +390,7 @@ var RESORTS = [
     elevationTop: 2686,
     elevationBottom: 1000,
     distanceFromMunichKm: 195,
-    bergfexSlug: 'bad-gastein-sportgastein',
+    bergfexSlug: 'sportgastein',
   },
   {
     id: 'schladming',
@@ -501,7 +501,7 @@ var RESORTS = [
     elevationTop: 3303,
     elevationBottom: 1856,
     distanceFromMunichKm: 280,
-    bergfexSlug: 'st-moritz',
+    bergfexSlug: 'st-moritz-corviglia',
   },
   {
     id: 'davos',
@@ -692,7 +692,7 @@ var RESORTS = [
     elevationTop: 3842,
     elevationBottom: 1035,
     distanceFromMunichKm: 455,
-    bergfexSlug: 'chamonix',
+    bergfexSlug: 'chamonix-mont-blanc',
   },
   {
     id: 'les-deux-alpes',
@@ -712,7 +712,7 @@ var RESORTS = [
     elevationTop: 3330,
     elevationBottom: 1250,
     distanceFromMunichKm: 555,
-    bergfexSlug: 'alpe-d-huez',
+    bergfexSlug: 'alpe-dhuez-grand-domaine',
   },
   {
     id: 'valmorel',
